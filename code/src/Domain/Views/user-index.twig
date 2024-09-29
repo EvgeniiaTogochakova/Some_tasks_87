@@ -1,0 +1,117 @@
+<h3>Список пользователей в хранилище</h3>
+{% if isAdmin %}
+    <a href="/user/edit">Добавить пользователя</a>
+{% endif %}
+<div class="table-responsive small">
+    <table class="table table-striped table-sm">
+        <thead>
+        <tr>
+            <th scope="col">Id</th>
+            <th scope="col">Имя</th>
+            <th scope="col">Фамилия</th>
+            <th scope="col">День рождения</th>
+            {% if isAdmin %}
+                <th scope="col">Ссылка для обновления</th>
+                <th scope="col">Ссылка для удаления</th>
+            {% endif %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr id="{{ user.getUserId() }}">
+                <td>{{ user.getUserId() }}
+                </td>
+                <td>{{ user.getUserName() }}
+                </td>
+                <td>{{ user.getUserLastName() }}</td>
+                <td>
+                    {% if user.getUserBirthday() is empty %}
+                        <b>не установлен</b>
+                    {% else %}
+                        {{ user.getUserBirthday() | date('d.m.Y') }}
+                    {% endif %}
+                </td>
+                {% if isAdmin %}
+                    <td>
+                        <a href="/user/edit/?user_id={{ user.userId }}">Обновить данные</a>
+                    </td>
+                    <td>
+                        <a href="/user/delete/?user_id={{ user.userId }}">Удалить</a>
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const tableBodyEl = document.querySelector('table.table tbody');
+
+    async function getFlag() {
+        const response = await fetch('/user/isAdmin/');
+        return await response.json();
+    }
+
+    getFlag();
+    setInterval(async function checkIfMoreUsers() {
+        const rowEls = tableBodyEl.querySelectorAll('tr');
+        const lastRowEl = rowEls[rowEls.length - 1];
+        let maxId = +lastRowEl.querySelectorAll('td')[0].textContent;
+        const flag = await getFlag();
+        const url = '/user/indexRefresh/'
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: JSON.stringify({maxId: maxId})
+        });
+        const users = await response.json();
+        if (users.length > 0) {
+            for (const user of users) {
+                const newUserEl = document.createElement("tr");
+                newUserEl.setAttribute("id", user.id);
+                newUserEl.insertAdjacentHTML('beforeend',
+                    `
+                <td>${user.id}</td><td>${user.username}</td>
+                <td>${user.userlastname}</td><td>${user.userbirthday}</td>
+                `
+                );
+                if (flag) {
+                    newUserEl.insertAdjacentHTML(
+                        'beforeend',
+                        `
+                <td><a href="/user/edit/?user_id=${user.id}">Обновить данные</a></td>
+                <td><a href="/user/delete/?user_id=${user.id}">Удалить</a></td>
+                `
+                    );
+                }
+                tableBodyEl.append(newUserEl);
+            }
+        }
+    }, 10000);
+
+    setInterval(async function checkIfFewerUsers() {
+        const rowEls = tableBodyEl.querySelectorAll('tr');
+        const rowIds = [...rowEls].map((el) => Number(el.getAttribute('id')));
+        const url = '/user/checkIfFewerUsers/'
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: JSON.stringify(rowIds)
+        });
+        const usersIds = await response.json();
+        if (usersIds.length > 0) {
+            const difference = rowIds.filter(id => !usersIds.includes(id));
+            for (const rowEl of rowEls) {
+                if (difference.includes(Number(rowEl.getAttribute('id')))) {
+                    rowEl.remove();
+                }
+            }
+        }
+    }, 12000);
+
+</script>

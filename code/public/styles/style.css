@@ -1,0 +1,42 @@
+* {
+    background-color: darkseagreen;
+    color: white;
+}
+
+p {
+    font-size: 16px;
+}
+
+ul {
+    list-style-type: none;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    border: 3px solid gray;
+    text-align: center;
+    background-color: white;
+    color: darkseagreen;
+    display: inline-block;
+    padding: 10px;
+}
+
+a {
+    color: darkblue;
+}
+
+p.warning{
+    font-size: 14px;
+}
+
+.error{
+    border: 3px solid coral;
+}
+
+img{
+    width:350px;
+}
